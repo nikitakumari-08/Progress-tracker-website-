@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale-1.0">
+    <title>Kiki's Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent-500: #f97316;
+            --accent-400: #fb923c;
+            --accent-300: #fdba74;
+            --gray-900: #0f172a;
+            --gray-800: #1e293b;
+            --gray-700: #334155;
+            --gray-600: #475569;
+            --gray-500: #64748b;
+            --gray-400: #94a3b8;
+            --gray-300: #cbd5e1;
+            --gray-200: #e2e8f0;
+            --gray-100: #f1f5f9;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--gray-900) 0%, #1a1a2e 100%);
+            color: var(--gray-300);
+            transition: all 0.5s ease;
+            overflow-x: hidden;
+        }
+        
+        body.welcome-active {
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #2d1b00 100%);
+        }
+        
+        body.exit-active {
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #2d1b00 100%);
+        }
+        
+        .font-heading {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .task-card, .goal-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .task-card:hover, .goal-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+            border-color: var(--accent-500);
+        }
+        
+        .modal-backdrop {
+            transition: opacity 0.3s ease-in-out;
+            backdrop-filter: blur(8px);
+        }
+        
+        .modal-content {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .progress-bar div {
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .sidebar-link {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+        
+        .sidebar-link:hover::before {
+            left: 100%;
+        }
+        
+        .sidebar-link.active {
+            background: linear-gradient(135deg, var(--accent-500), var(--accent-400));
+            color: white;
+            box-shadow: 0 8px 16px -4px rgba(249, 115, 22, 0.3);
+            transform: translateX(4px);
+        }
+        
+        .sidebar-link:not(.active):hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            transform: translateX(2px);
+        }
+        
+        .page {
+            display: none;
+            animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        @keyframes fadeInUp {
+            from { 
+                opacity: 0; 
+                transform: translateY(30px) scale(0.95); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+            }
+        }
+        
+        .filter-btn.active, .priority-filter-btn.active {
+            background: linear-gradient(135deg, var(--accent-500), var(--accent-400));
+            color: white;
+            box-shadow: 0 4px 8px -2px rgba(249, 115, 22, 0.3);
+        }
+        
+        /* Professional animations */
+        @keyframes slideInFromLeft {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideInFromRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes fadeInScale {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        .slide-in-left {
+            animation: slideInFromLeft 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .slide-in-right {
+            animation: slideInFromRight 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .fade-in-scale {
+            animation: fadeInScale 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        #main-app {
+            min-height: 100vh;
+        }
+        
+        .color-swatch {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .color-swatch:hover {
+            transform: scale(1.15);
+            box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .color-swatch.active {
+            border-width: 3px;
+            border-color: white;
+            box-shadow: 0 0 0 2px var(--accent-500);
+        }
+        
+        [contenteditable]:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.3);
+            border-radius: 0.375rem;
+        }
+        
+        /* Professional glass morphism effect */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        
+        /* Enhanced button styles */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-500), var(--accent-400));
+            box-shadow: 0 4px 15px 0 rgba(249, 115, 22, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px 0 rgba(249, 115, 22, 0.4);
+        }
+        
+        /* Professional header styling */
+        .header-glass {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 welcome-active">
+
+    <!-- Entry Page -->
+    <div id="page-entry" class="page fixed inset-0 flex flex-col items-center justify-center text-center p-4 transition-opacity duration-500 overflow-hidden">
+        <div class="relative z-10">
+            <img src="./images/logo kikis tracker.jpg" alt="Kiki's Tracker Logo" class="w-24 h-24 mb-6 rounded-3xl shadow-lg float-animation" style="animation-duration: 3.5s;">
+            <h1 class="text-6xl sm:text-7xl font-bold text-orange-500 mb-6 fade-in-scale font-heading">Welcome to Kiki's Tracker</h1>
+            <p class="text-xl text-gray-200 mb-8 fade-in-scale">Professional Progress Tracking & Goal Management</p>
+            <div class="mb-8 fade-in-scale">
+                <div class="flex justify-center space-x-8 text-gray-200">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-orange-500/20 border border-orange-500/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <svg class="w-8 h-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                        </div>
+                        <p class="text-sm">Task Management</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-orange-500/20 border border-orange-500/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <svg class="w-8 h-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-sm">Goal Setting</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-orange-500/20 border border-orange-500/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <svg class="w-8 h-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-sm">Analytics</p>
+                    </div>
+                </div>
+            </div>
+            <div class="h-20 flex items-center justify-center">
+                 <p id="entry-quote" class="text-xl text-orange-400 italic max-w-lg"></p>
+            </div>
+            <button id="enter-btn" class="btn-primary text-white font-bold py-4 px-12 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-orange-400/50 fade-in-scale">
+                <span class="flex items-center">
+                    Get Started
+                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                    </svg>
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main App Container (Initially Hidden) -->
+    <div id="main-app" class="hidden">
+        
+        <!-- Sidebar -->
+        <aside id="sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen glass-card p-4 flex flex-col transition-transform -translate-x-full md:translate-x-0">
+            <div class="flex items-center space-x-3 mb-8">
+                 <img src="./images/logo kikis tracker.jpg">
+            </div>
+            <nav class="flex flex-col space-y-2 flex-grow">
+                <button id="nav-tasks" class="sidebar-link text-left text-lg font-medium py-3 px-4 rounded-lg">Tasks</button>
+                <button id="nav-goals" class="sidebar-link text-left text-lg font-medium py-3 px-4 rounded-lg">Goals</button>
+                <button id="nav-dashboard" class="sidebar-link text-left text-lg font-medium py-3 px-4 rounded-lg">Dashboard</button>
+            </nav>
+            <div class="mt-auto">
+                 <button id="back-to-entry-btn" class="w-full sidebar-link text-left text-lg font-medium py-3 px-4 rounded-lg flex items-center">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    Exit Tracker
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="md:ml-64 transition-all">
+             <!-- Header -->
+             <header class="relative flex items-center justify-between mb-6 px-4 sm:px-6 lg:px-8 py-3 header-glass sticky top-0 z-30">
+                 <button id="hamburger-btn" class="p-2 text-gray-400 hover:text-orange-500 md:hidden">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                 </button>
+                 <div class="flex-grow"></div>
+                 <div class="flex items-center justify-end space-x-2">
+                    <div id="pomodoro-timer" class="text-lg font-mono bg-gray-700/50 rounded-lg px-3 py-1" title="Click to edit time">
+                        <span id="pomodoro-time" contenteditable="true">25:00</span>
+                    </div>
+                    <button id="settings-btn" class="p-2 text-gray-400 hover:text-orange-500 transition rounded-full hover:bg-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    </button>
+                 </div>
+            </header>
+            
+            <main class="px-4 sm:px-6 lg:px-8">
+                <!-- ======================= -->
+                <!-- ===== TASKS PAGE ===== -->
+                <!-- ======================= -->
+                <div id="page-tasks" class="page">
+                    <!-- Progress Section -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-gray-800 rounded-xl shadow-md p-6">
+                            <div class="flex justify-between items-center mb-2">
+                                <h2 class="text-lg font-semibold text-gray-200">Overall Progress</h2>
+                                <span id="progress-percentage" class="text-lg font-bold text-orange-400">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-4 progress-bar">
+                                <div id="progress-bar-fill" class="bg-orange-500 h-4 rounded-full" style="width: 0%;"></div>
+                            </div>
+                            <p id="progress-summary" class="text-sm text-gray-400 mt-2">You have 0 tasks to do.</p>
+                        </div>
+                        <div class="bg-gray-800 rounded-xl shadow-md p-6">
+                            <div class="flex justify-between items-center mb-2">
+                                <h2 class="text-lg font-semibold text-gray-200">This Week's Progress</h2>
+                                <span id="weekly-progress-percentage" class="text-lg font-bold text-orange-400">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-4 progress-bar">
+                                <div id="weekly-progress-bar-fill" class="bg-orange-500 h-4 rounded-full" style="width: 0%;"></div>
+                            </div>
+                            <p id="weekly-progress-summary" class="text-sm text-gray-400 mt-2">No tasks due this week.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Controls -->
+                     <div class="bg-gray-800 rounded-xl shadow-sm p-4 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="font-semibold text-sm text-gray-400 text-center block mb-2">Filter by Status</label>
+                                <div id="status-filters" class="flex justify-center space-x-2">
+                                    <button data-filter="all" class="filter-btn bg-gray-700 px-4 py-2 rounded-full text-sm font-semibold shadow hover:bg-gray-600">All (0)</button>
+                                    <button data-filter="pending" class="filter-btn bg-gray-700 px-4 py-2 rounded-full text-sm font-semibold shadow hover:bg-gray-600">Pending (0)</button>
+                                    <button data-filter="completed" class="filter-btn bg-gray-700 px-4 py-2 rounded-full text-sm font-semibold shadow hover:bg-gray-600">Completed (0)</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="font-semibold text-sm text-gray-400 text-center block mb-2">Filter by Priority</label>
+                                <div id="priority-filters" class="flex justify-center space-x-2">
+                                    <button data-priority="all" class="priority-filter-btn bg-gray-700 px-4 py-2 rounded-full text-sm font-semibold shadow hover:bg-gray-600">All (0)</button>
+                                    <button data-priority="easy" class="priority-filter-btn bg-gray-700 px-4 py-2 rounded-full text-sm font-semibold shadow hover:bg-gray-600">Easy (0)</button>
+                                    <button data-priority="medium" class="priority-filter-btn bg-gray-700 px-4 py-2 rounded-full text-sm font-semibold shadow hover:bg-gray-600">Medium (0)</button>
+                                    <button data-priority="hard" class="priority-filter-btn bg-gray-700 px-4 py-2 rounded-full text-sm font-semibold shadow hover:bg-gray-600">Hard (0)</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Task Lists -->
+                    <div id="task-container">
+                        <section id="tasks-section">
+                            <div id="task-list" class="space-y-4"></div>
+                            <p id="no-tasks-message" class="text-center text-gray-500 py-6 hidden">No tasks found for this filter.</p>
+                        </section>
+                    </div>
+                </div>
+
+                <!-- ====================== -->
+                <!-- ===== GOALS PAGE ===== -->
+                <!-- ====================== -->
+                <div id="page-goals" class="page">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold">Your Goals</h2>
+                        <button id="add-goal-btn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                            New Goal
+                        </button>
+                    </div>
+                    
+                    <div id="this-week-goals-section">
+                        <h3 class="text-2xl font-semibold mb-4 border-b-2 border-gray-700 pb-2">This Week's Goals</h3>
+                        <div id="goal-list" class="space-y-6">
+                            <!-- Active goals will be rendered here -->
+                        </div>
+                        <p id="no-goals-message" class="text-center text-gray-500 py-10">You haven't set any goals yet. Click 'New Goal' to start!</p>
+                    </div>
+
+                    <div id="last-week-goals-section" class="mt-12">
+                         <h3 class="text-2xl font-semibold mb-4 border-b-2 border-gray-700 pb-2">Completed Goals (Last Week)</h3>
+                        <div id="completed-goal-list" class="space-y-6">
+                             <!-- Completed goals will be rendered here -->
+                        </div>
+                        <p id="no-completed-goals-message" class="text-center text-gray-500 py-10">No goals completed last week.</p>
+                    </div>
+                </div>
+                
+                <!-- =========================== -->
+                <!-- ===== DASHBOARD PAGE ===== -->
+                <!-- =========================== -->
+                <div id="page-dashboard" class="page">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-gray-800 rounded-xl shadow-md p-6 text-center">
+                            <h3 class="text-lg font-semibold text-gray-400">Total Tasks</h3>
+                            <p id="stats-total" class="text-4xl font-bold text-gray-100 mt-2">0</p>
+                        </div>
+                         <div class="bg-gray-800 rounded-xl shadow-md p-6 text-center">
+                            <h3 class="text-lg font-semibold text-gray-400">Completed</h3>
+                            <p id="stats-completed" class="text-4xl font-bold mt-2 text-green-500">0</p>
+                        </div>
+                         <div class="bg-gray-800 rounded-xl shadow-md p-6 text-center">
+                            <h3 class="text-lg font-semibold text-gray-400">Pending</h3>
+                            <p id="stats-pending" class="text-4xl font-bold mt-2 text-yellow-500">0</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div class="bg-gray-800 rounded-xl shadow-md p-6">
+                             <h3 class="text-xl font-semibold text-gray-100 mb-4">Analytics & Reports</h3>
+                             <div class="space-y-4">
+                                 <div class="flex items-center">
+                                     <div class="p-3 bg-gray-700 rounded-lg mr-4">
+                                         <svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                     </div>
+                                     <div>
+                                         <p class="text-sm text-gray-400">Avg. Completion Time</p>
+                                         <p id="stats-avg-time" class="text-lg font-bold text-gray-100">--</p>
+                                     </div>
+                                 </div>
+                             </div>
+                             <div class="mt-6">
+                                <h4 class="font-semibold text-gray-100 mb-2">Progress by Subject</h4>
+                                <div id="subject-analytics" class="space-y-3">
+                                    <p class="text-gray-500 text-sm">No subjects tracked yet.</p>
+                                </div>
+                             </div>
+                        </div>
+                        <div class="bg-gray-800 rounded-xl shadow-md p-6">
+                            <h3 class="text-xl font-semibold text-gray-100 mb-4">Recently Completed</h3>
+                            <ul id="recently-completed-list" class="space-y-2 text-sm text-gray-300">
+                                <li>No tasks completed yet.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+
+        <!-- Add Task Button -->
+        <button id="add-task-btn" class="fixed bottom-6 right-6 btn-primary text-white font-bold rounded-full p-4 shadow-lg transition-all duration-300 transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-orange-400/50 z-50">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+        </button>
+        
+        <!-- Sidebar Overlay for Mobile -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"></div>
+    </div>
+
+    <!-- Exit Page -->
+    <div id="page-exit" class="page fixed inset-0 flex flex-col items-center justify-center text-center p-4 transition-opacity duration-500 overflow-hidden hidden">
+        <div class="relative z-10 max-w-2xl mx-auto">
+            <div class="mb-8 fade-in-scale">
+                <div class="w-32 h-32 bg-orange-500/20 border border-orange-500/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-16 h-16 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
+            <h1 class="text-5xl sm:text-6xl font-bold text-orange-500 mb-6 fade-in-scale font-heading">Thank You!</h1>
+            <p class="text-xl text-gray-200 mb-8 fade-in-scale">Thank you for tracking your progress with Kiki's Tracker</p>
+            <div class="mb-8 fade-in-scale">
+                <div class="bg-orange-500/10 rounded-2xl p-6 backdrop-blur-sm border border-orange-500/20">
+                    <h3 class="text-lg font-semibold text-orange-300 mb-4">Your Progress Summary</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                        <div>
+                            <div class="text-2xl font-bold text-orange-400" id="exit-tasks-completed">0</div>
+                            <div class="text-sm text-gray-300">Tasks Completed</div>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold text-orange-400" id="exit-goals-achieved">0</div>
+                            <div class="text-sm text-gray-300">Goals Achieved</div>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold text-orange-400" id="exit-productivity-score">0%</div>
+                            <div class="text-sm text-gray-300">Productivity Score</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-8 fade-in-scale">
+                <p class="text-lg text-orange-300 italic">"Success is the sum of small efforts repeated day in and day out."</p>
+                <p class="text-sm text-gray-400 mt-2">- Robert Collier</p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button id="return-to-tracker-btn" class="btn-primary text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-orange-400/50">
+                    <span class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        Return to Tracker
+                    </span>
+                </button>
+                <button id="new-session-btn" class="bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-orange-400/20 border border-orange-500/30">
+                    <span class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        New Session
+                    </span>
+                </button>
+            </div>
+            
+            <!-- Footer for Exit Page Only -->
+            <div class="mt-12 fade-in-scale">
+                <footer class="text-center py-4">
+                    <p class="text-gray-500 flex items-center justify-center">
+                        Made with 
+                        <svg class="w-5 h-5 mx-1 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                        by Kiki
+                    </p>
+                </footer>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <div id="modal-container">
+        <!-- Task Modal -->
+        <div id="task-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4 modal-backdrop opacity-0 pointer-events-none">
+            <div class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-md p-6 modal-content transform scale-95">
+                <h2 id="modal-title" class="text-2xl font-bold mb-6 text-white">Add New Task</h2>
+                <form id="task-form">
+                    <input type="hidden" id="task-id">
+                    <div class="mb-4">
+                        <label for="task-title" class="block text-sm font-medium text-gray-300 mb-1">Title</label>
+                        <input type="text" id="task-title" class="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-700 text-gray-100" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="task-description" class="block text-sm font-medium text-gray-300 mb-1">Description</label>
+                        <textarea id="task-description" rows="2" class="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-700 text-gray-100"></textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="task-due-date" class="block text-sm font-medium text-gray-300 mb-1">Due Date</label>
+                            <input type="date" id="task-due-date" class="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-700 text-gray-100">
+                        </div>
+                        <div>
+                            <label for="task-priority" class="block text-sm font-medium text-gray-300 mb-1">Priority</label>
+                            <select id="task-priority" class="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-700 text-gray-100">
+                                <option value="easy">Easy</option>
+                                <option value="medium">Medium</option>
+                                <option value="hard">Hard</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="task-subject" class="block text-sm font-medium text-gray-300 mb-1">Subject / Topic</label>
+                            <input type="text" id="task-subject" class="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-700 text-gray-100" placeholder="e.g., Maths">
+                        </div>
+                         <div>
+                            <label for="task-goal" class="block text-sm font-medium text-gray-300 mb-1">Link to Goal</label>
+                            <select id="task-goal" class="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-700 text-gray-100">
+                                <option value="">None</option>
+                                <!-- Goals options populated by JS -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-2">
+                        <button type="button" id="cancel-btn" class="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500 transition">Cancel</button>
+                        <button type="button" id="gemini-breakdown-btn" class="px-4 py-2 bg-rose-500 text-white rounded-md hover:bg-rose-600 transition flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <span class="gemini-btn-text">✨ Break Down</span>
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition">Save Task</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Goal Modal -->
+        <div id="goal-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4 modal-backdrop opacity-0 pointer-events-none">
+            <div class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-md p-6 modal-content transform scale-95">
+                <h2 id="goal-modal-title" class="text-2xl font-bold mb-6 text-white">Add New Goal</h2>
+                <form id="goal-form">
+                    <input type="hidden" id="goal-id">
+                    <div class="mb-4">
+                        <label for="goal-title" class="block text-sm font-medium text-gray-300 mb-1">Goal Title</label>
+                        <input type="text" id="goal-title" class="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-700 text-gray-100" required placeholder="e.g., Master Calculus">
+                    </div>
+                    <div class="flex justify-end space-x-2">
+                        <button type="button" id="cancel-goal-btn" class="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500 transition">Cancel</button>
+                        <button type="submit" class="px-6 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition">Save Goal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4 modal-backdrop opacity-0 pointer-events-none">
+            <div class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-md p-6 modal-content transform scale-95">
+                <h2 class="text-2xl font-bold mb-6 text-white">Customization</h2>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Accent Color</label>
+                    <div id="color-palette" class="flex space-x-3">
+                        <div class="color-swatch w-10 h-10 rounded-full cursor-pointer bg-orange-500" data-color="#f97316"></div>
+                        <div class="color-swatch w-10 h-10 rounded-full cursor-pointer bg-blue-500" data-color="#3b82f6"></div>
+                        <div class="color-swatch w-10 h-10 rounded-full cursor-pointer bg-green-500" data-color="#22c55e"></div>
+                        <div class="color-swatch w-10 h-10 rounded-full cursor-pointer bg-pink-500" data-color="#ec4899"></div>
+                        <div class="color-swatch w-10 h-10 rounded-full cursor-pointer bg-purple-500" data-color="#a855f7"></div>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-6">
+                    <button type="button" id="close-settings-btn" class="px-6 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500 transition">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Custom Alert/Message Box -->
+    <div id="message-box" class="fixed top-5 right-5 bg-red-500 text-white py-2 px-5 rounded-lg shadow-lg opacity-0 transform translate-y-[-20px] transition-all duration-300 z-[100]">
+        <p id="message-text">An error occurred!</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const bodyEl = document.querySelector('body');
+            const rootEl = document.documentElement;
+            const entryPage = document.getElementById('page-entry');
+            const enterBtn = document.getElementById('enter-btn');
+            const mainApp = document.getElementById('main-app');
+            const entryQuoteEl = document.getElementById('entry-quote');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+            const hamburgerBtn = document.getElementById('hamburger-btn');
+            const backToEntryBtn = document.getElementById('back-to-entry-btn');
+            
+            // Tasks
+            const taskList = document.getElementById('task-list');
+            const noTasksMessage = document.getElementById('no-tasks-message');
+            const progressBarFill = document.getElementById('progress-bar-fill');
+            const progressPercentage = document.getElementById('progress-percentage');
+            const progressSummary = document.getElementById('progress-summary');
+            const weeklyProgressBarFill = document.getElementById('weekly-progress-bar-fill');
+            const weeklyProgressPercentage = document.getElementById('weekly-progress-percentage');
+            const weeklyProgressSummary = document.getElementById('weekly-progress-summary');
+            
+            // Goals
+            const goalList = document.getElementById('goal-list');
+            const completedGoalList = document.getElementById('completed-goal-list');
+            const noGoalsMessage = document.getElementById('no-goals-message');
+            const noCompletedGoalsMessage = document.getElementById('no-completed-goals-message');
+            const addGoalBtn = document.getElementById('add-goal-btn');
+            const goalModal = document.getElementById('goal-modal');
+            const goalModalTitle = document.getElementById('goal-modal-title');
+            const goalForm = document.getElementById('goal-form');
+            const goalIdInput = document.getElementById('goal-id');
+            const goalTitleInput = document.getElementById('goal-title');
+            const cancelGoalBtn = document.getElementById('cancel-goal-btn');
+
+            // Modals
+            const taskModal = document.getElementById('task-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const taskForm = document.getElementById('task-form');
+            const taskIdInput = document.getElementById('task-id');
+            const taskTitleInput = document.getElementById('task-title');
+            const taskDescriptionInput = document.getElementById('task-description');
+            const taskDueDateInput = document.getElementById('task-due-date');
+            const taskPriorityInput = document.getElementById('task-priority');
+            const taskSubjectInput = document.getElementById('task-subject');
+            const taskGoalSelect = document.getElementById('task-goal');
+            const geminiBtn = document.getElementById('gemini-breakdown-btn');
+            const addTaskBtn = document.getElementById('add-task-btn');
+            const cancelBtn = document.getElementById('cancel-btn');
+            
+            // Dashboard & Analytics
+            const statsTotal = document.getElementById('stats-total');
+            const statsCompleted = document.getElementById('stats-completed');
+            const statsPending = document.getElementById('stats-pending');
+            const statsAvgTime = document.getElementById('stats-avg-time');
+            const recentlyCompletedList = document.getElementById('recently-completed-list');
+            const subjectAnalyticsContainer = document.getElementById('subject-analytics');
+            
+            // General UI
+            const messageBox = document.getElementById('message-box');
+            const messageText = document.getElementById('message-text');
+            const navLinks = document.querySelectorAll('.sidebar-link');
+            const statusFilters = document.getElementById('status-filters');
+            const priorityFilters = document.getElementById('priority-filters');
+            
+            // Pomodoro & Settings
+            const pomodoroTimeEl = document.getElementById('pomodoro-time');
+            const settingsBtn = document.getElementById('settings-btn');
+            const settingsModal = document.getElementById('settings-modal');
+            const closeSettingsBtn = document.getElementById('close-settings-btn');
+            const colorPalette = document.getElementById('color-palette');
+
+            // --- Global State ---
+            let allTasks = [];
+            let allGoals = [];
+            let currentStatusFilter = 'all';
+            let currentPriorityFilter = 'all';
+            let currentPage = 'tasks';
+            let lastStats = { total: null, completed: null, pending: null };
+            let pomodoroInterval;
+            let pomodoroTime = 25 * 60;
+            let isPomodoroRunning = false;
+
+            // --- Local Storage Functions ---
+            const saveAllData = () => {
+                localStorage.setItem('kikisTrackerTasks', JSON.stringify(allTasks));
+                localStorage.setItem('kikisTrackerGoals', JSON.stringify(allGoals));
+            };
+
+            const loadAllData = () => {
+                const storedTasks = localStorage.getItem('kikisTrackerTasks');
+                const storedGoals = localStorage.getItem('kikisTrackerGoals');
+                allTasks = storedTasks ? JSON.parse(storedTasks) : [];
+                allGoals = storedGoals ? JSON.parse(storedGoals) : [];
+            };
+
+            // --- Gemini API (Placeholder) ---
+            async function breakDownTaskWithGemini(taskTitle) {
+                console.log("Simulating Gemini API call for:", taskTitle);
+                showMessage("AI features are for demonstration in this version.", "info");
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                return [ `Plan '${taskTitle}'`, `Execute '${taskTitle}'`, `Review '${taskTitle}'` ];
+            }
+            
+            // --- UI Rendering ---
+            function renderAll() {
+                switchPage(currentPage);
+                renderTasks();
+                renderGoals();
+                updateProgress();
+                updateThisWeekProgress();
+                updateDashboard();
+                updateFilterCounts();
+                populateGoalDropdown();
+            }
+            
+            function switchPage(pageId) {
+                currentPage = pageId;
+                document.querySelectorAll('#main-app .page').forEach(page => {
+                    page.classList.toggle('active', page.id === `page-${pageId}`);
+                });
+                navLinks.forEach(link => {
+                    link.classList.toggle('active', link.id.includes(pageId));
+                });
+                addTaskBtn.style.display = pageId === 'tasks' ? 'flex' : 'none';
+
+                if (window.innerWidth < 768) { // md breakpoint
+                    toggleSidebar(true); // Force close sidebar
+                }
+            }
+
+            function renderTasks() {
+                taskList.innerHTML = '';
+                const filteredTasks = allTasks.filter(task => {
+                    const statusMatch = currentStatusFilter === 'all' || task.status === currentStatusFilter;
+                    const priorityMatch = currentPriorityFilter === 'all' || task.priority === currentPriorityFilter;
+                    return statusMatch && priorityMatch;
+                });
+                
+                filteredTasks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                if (filteredTasks.length === 0) {
+                    noTasksMessage.classList.remove('hidden');
+                    noTasksMessage.textContent = allTasks.length === 0 ? "You have no tasks yet. Click '+' to add one!" : "No tasks match the current filters.";
+                } else {
+                    noTasksMessage.classList.add('hidden');
+                    filteredTasks.forEach(task => taskList.appendChild(createTaskElement(task)));
+                }
+            }
+            
+            function updateFilterCounts() {
+                const pendingCount = allTasks.filter(t => t.status === 'pending').length;
+                const completedCount = allTasks.filter(t => t.status === 'completed').length;
+                
+                document.querySelector('[data-filter="all"]').textContent = `All (${allTasks.length})`;
+                document.querySelector('[data-filter="pending"]').textContent = `Pending (${pendingCount})`;
+                document.querySelector('[data-filter="completed"]').textContent = `Completed (${completedCount})`;
+                
+                const easyCount = allTasks.filter(t => t.priority === 'easy').length;
+                const mediumCount = allTasks.filter(t => t.priority === 'medium').length;
+                const hardCount = allTasks.filter(t => t.priority === 'hard').length;
+                const totalWithPriority = easyCount + mediumCount + hardCount;
+
+                document.querySelector('[data-priority="all"]').textContent = `All (${totalWithPriority})`;
+                document.querySelector('[data-priority="easy"]').textContent = `Easy (${easyCount})`;
+                document.querySelector('[data-priority="medium"]').textContent = `Medium (${mediumCount})`;
+                document.querySelector('[data-priority="hard"]').textContent = `Hard (${hardCount})`;
+            }
+
+            function renderGoals() {
+                goalList.innerHTML = '';
+                completedGoalList.innerHTML = '';
+
+                const today = new Date();
+                const dayOfWeek = today.getDay(); 
+                const startOfLastWeek = new Date(today);
+                startOfLastWeek.setDate(today.getDate() - dayOfWeek - 6); // Set to last Monday
+                startOfLastWeek.setHours(0, 0, 0, 0);
+
+                const endOfLastWeek = new Date(startOfLastWeek);
+                endOfLastWeek.setDate(startOfLastWeek.getDate() + 6);
+                endOfLastWeek.setHours(23, 59, 59, 999);
+                
+                const pendingGoals = allGoals.filter(g => g.status === 'pending');
+                const completedLastWeekGoals = allGoals.filter(g => {
+                    if (g.status !== 'completed' || !g.completedAt) return false;
+                    const completedDate = new Date(g.completedAt);
+                    return completedDate >= startOfLastWeek && completedDate <= endOfLastWeek;
+                });
+                
+                if (pendingGoals.length === 0) {
+                    noGoalsMessage.style.display = 'block';
+                } else {
+                    noGoalsMessage.style.display = 'none';
+                    pendingGoals.forEach(goal => goalList.appendChild(createGoalElement(goal)));
+                }
+                
+                if (completedLastWeekGoals.length === 0) {
+                    noCompletedGoalsMessage.style.display = 'block';
+                } else {
+                    noCompletedGoalsMessage.style.display = 'none';
+                    completedLastWeekGoals.forEach(goal => completedGoalList.appendChild(createGoalElement(goal)));
+                }
+            }
+
+            function createGoalElement(goal) {
+                const linkedTasks = allTasks.filter(t => t.goalId === goal.id);
+                const completedTasks = linkedTasks.filter(t => t.status === 'completed').length;
+                const isCompleted = goal.status === 'completed';
+                const progress = linkedTasks.length > 0 ? Math.round((completedTasks / linkedTasks.length) * 100) : 0;
+                const canComplete = progress === 100 && !isCompleted;
+
+                const goalEl = document.createElement('div');
+                goalEl.className = `goal-card bg-gray-800 rounded-xl shadow-md p-6 border border-transparent ${isCompleted ? 'opacity-50' : ''}`;
+                goalEl.dataset.id = goal.id;
+                goalEl.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-xl font-bold ${isCompleted ? 'line-through' : ''} text-gray-100">${goal.title}</h3>
+                            <p class="text-sm text-gray-400">${completedTasks} of ${linkedTasks.length} milestones completed</p>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            ${canComplete ? `<button class="complete-goal-btn p-2 text-green-400 hover:text-green-500 transition rounded-full hover:bg-gray-700" title="Mark as Complete"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button>` : ''}
+                            ${!isCompleted ? `<button class="edit-goal-btn p-2 text-gray-400 hover:text-blue-500 transition rounded-full hover:bg-gray-700"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L16.732 3.732z"></path></svg></button>` : ''}
+                            <button class="delete-goal-btn p-2 text-gray-400 hover:text-red-500 transition rounded-full hover:bg-gray-700"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-sm font-semibold">Progress</span>
+                            <span class="text-sm font-bold" style="color: var(--accent-400);">${progress}%</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-3 progress-bar">
+                            <div class="bg-orange-500 h-3 rounded-full" style="width: ${progress}%; background-color: var(--accent-500);"></div>
+                        </div>
+                    </div>
+                `;
+                return goalEl;
+            }
+            
+            function updateDashboard() {
+                // Subject Analytics
+                subjectAnalyticsContainer.innerHTML = '';
+                const subjects = [...new Set(allTasks.map(t => t.subject).filter(Boolean))];
+                if (subjects.length > 0) {
+                    subjects.forEach(subject => {
+                        const subjectTasks = allTasks.filter(t => t.subject === subject);
+                        const completed = subjectTasks.filter(t => t.status === 'completed').length;
+                        const total = subjectTasks.length;
+                        const percentage = total > 0 ? Math.round((completed/total)*100) : 0;
+                        const analyticsEl = document.createElement('div');
+                        analyticsEl.innerHTML = `
+                             <div class="flex justify-between items-center mb-1">
+                                <h4 class="font-semibold capitalize text-gray-300">${subject}</h4>
+                                <span class="text-gray-400 text-sm">${completed}/${total} Done</span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-2.5">
+                                <div class="bg-orange-500 h-2.5 rounded-full" style="width: ${percentage}%; background-color: var(--accent-500);"></div>
+                            </div>
+                        `;
+                        subjectAnalyticsContainer.appendChild(analyticsEl);
+                    });
+                } else {
+                    subjectAnalyticsContainer.innerHTML = '<p class="text-gray-500 text-sm">No subjects tracked yet.</p>';
+                }
+
+                const total = allTasks.length;
+                const completedTasks = allTasks.filter(t => t.status === 'completed');
+                const completed = completedTasks.length;
+                const pending = total - completed;
+
+                if (lastStats.total !== total) animateValue(statsTotal, lastStats.total || 0, total, 500);
+                if (lastStats.completed !== completed) animateValue(statsCompleted, lastStats.completed || 0, completed, 500);
+                if (lastStats.pending !== pending) animateValue(statsPending, lastStats.pending || 0, pending, 500);
+                lastStats = { total, completed, pending };
+
+                const tasksWithDuration = completedTasks.filter(t => t.createdAt && t.completedAt);
+                if (tasksWithDuration.length > 0) {
+                    const totalDuration = tasksWithDuration.reduce((sum, task) => {
+                        const duration = (new Date(task.completedAt) - new Date(task.createdAt)) / 1000;
+                        return sum + duration;
+                    }, 0);
+                    const avgDuration = totalDuration / tasksWithDuration.length;
+                    statsAvgTime.textContent = formatDuration(avgDuration);
+                } else {
+                    statsAvgTime.textContent = "--";
+                }
+
+                recentlyCompletedList.innerHTML = '';
+                if(completedTasks.length > 0) {
+                    const sortedCompleted = completedTasks.sort((a,b) => new Date(b.completedAt) - new Date(a.completedAt));
+                    sortedCompleted.slice(0, 3).forEach(task => {
+                        const li = document.createElement('li');
+                        li.className = 'flex items-center justify-between bg-gray-700/50 p-2 rounded-md';
+                        li.innerHTML = `<span>${task.title}</span><span class="text-xs text-gray-400">${new Date(task.completedAt).toLocaleDateString('en-US', {month: 'short', day:'numeric'})}</span>`;
+                        recentlyCompletedList.appendChild(li);
+                    });
+                } else {
+                    recentlyCompletedList.innerHTML = '<li>No tasks completed yet.</li>';
+                }
+            }
+
+
+            function createTaskElement(task) {
+                const div = document.createElement('div');
+                const isCompleted = task.status === 'completed';
+                div.className = `task-card bg-gray-800 rounded-xl shadow-md p-4 flex items-start space-x-4 border border-transparent ${isCompleted ? 'opacity-60' : ''}`;
+                div.dataset.id = task.id;
+                
+                const priorityClasses = {
+                    easy: 'bg-green-900 text-green-300',
+                    medium: 'bg-yellow-900 text-yellow-300',
+                    hard: 'bg-red-900 text-red-300'
+                };
+                const priorityClass = priorityClasses[task.priority] || 'bg-gray-700 text-gray-300';
+
+                let dueDateHtml = '';
+                if (task.dueDate) {
+                    const today = new Date();
+                    const dueDate = new Date(task.dueDate);
+                    today.setHours(0, 0, 0, 0);
+                    const isOverdue = !isCompleted && dueDate < today;
+                    const dateString = new Date(task.dueDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    dueDateHtml = `<p class="text-xs ${isOverdue ? 'text-red-500 font-semibold' : 'text-gray-400'}">Due: ${dateString}</p>`;
+                }
+
+                const subjectHtml = task.subject ? `<span class="text-xs font-semibold px-2 py-1 rounded-full bg-gray-700 capitalize">${task.subject}</span>` : '';
+
+                div.innerHTML = `
+                    <button class="complete-btn flex-shrink-0 mt-1 w-6 h-6 rounded-full border-2 ${isCompleted ? 'bg-orange-500 border-orange-500' : 'border-gray-500'}" style="background-color: ${isCompleted ? 'var(--accent-500)' : 'transparent'}; border-color: ${isCompleted ? 'var(--accent-500)' : 'var(--gray-500)'};">
+                        ${isCompleted ? '<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                    </button>
+                    <div class="flex-grow">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-semibold text-lg ${isCompleted ? 'line-through text-gray-500' : 'text-gray-100'}">${task.title}</h3>
+                            <div class="flex items-center space-x-2">
+                                ${subjectHtml}
+                                <span class="text-xs font-semibold px-2 py-1 rounded-full ${priorityClass} capitalize">${task.priority || 'normal'}</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 text-sm mt-1">${task.description || ''}</p>
+                        <div class="mt-2 text-xs">${dueDateHtml}</div>
+                    </div>
+                    <div class="flex-shrink-0 flex flex-col items-center space-y-2">
+                        <button class="start-pomodoro-btn p-2 text-gray-400 hover:text-orange-500 transition rounded-full hover:bg-gray-700" title="Start Pomodoro" style="--hover-color: var(--accent-500);">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </button>
+                         <button class="edit-btn p-2 text-gray-400 hover:text-blue-500 transition rounded-full hover:bg-gray-700" ${isCompleted ? 'disabled style="display:none;"' : ''}>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L16.732 3.732z"></path></svg>
+                        </button>
+                        <button class="delete-btn p-2 text-gray-400 hover:text-red-500 transition rounded-full hover:bg-gray-700">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                         <button class="p-2 text-gray-600 cursor-not-allowed" title="Reminders (coming soon)">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                        </button>
+                         <button class="p-2 text-gray-600 cursor-not-allowed" title="Collaborate (coming soon)">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-3-5.197m0 0A4 4 0 1112 4.354m0 0v5.292"></path></svg>
+                        </button>
+                    </div>
+                `;
+                return div;
+            }
+
+            function populateGoalDropdown() {
+                taskGoalSelect.innerHTML = '<option value="">None</option>';
+                const pendingGoals = allGoals.filter(g => g.status === 'pending');
+                pendingGoals.forEach(goal => {
+                    const option = document.createElement('option');
+                    option.value = goal.id;
+                    option.textContent = goal.title;
+                    taskGoalSelect.appendChild(option);
+                });
+            }
+
+            // --- Pomodoro Timer ---
+            function updatePomodoroDisplay() {
+                const minutes = Math.floor(pomodoroTime / 60);
+                const seconds = pomodoroTime % 60;
+                pomodoroTimeEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            function handlePomodoroTimeEdit() {
+                if (isPomodoroRunning) {
+                    showMessage("Cannot edit time while timer is running.", "error");
+                    updatePomodoroDisplay(); // revert
+                    return;
+                }
+                const timeParts = pomodoroTimeEl.textContent.split(':').map(Number);
+                if (timeParts.length === 2 && !isNaN(timeParts[0]) && !isNaN(timeParts[1])) {
+                    pomodoroTime = timeParts[0] * 60 + timeParts[1];
+                    showMessage("Pomodoro time updated.", "success");
+                } else {
+                    showMessage("Invalid time format. Please use MM:SS.", "error");
+                    updatePomodoroDisplay(); // revert
+                }
+            }
+
+
+            function startPomodoro() {
+                if (isPomodoroRunning) {
+                    showMessage("A Pomodoro session is already running.", "info");
+                    return;
+                }
+                isPomodoroRunning = true;
+                pomodoroInterval = setInterval(() => {
+                    pomodoroTime--;
+                    updatePomodoroDisplay();
+                    if (pomodoroTime <= 0) {
+                        clearInterval(pomodoroInterval);
+                        isPomodoroRunning = false;
+                        showMessage("Pomodoro session finished! Time for a break.", "success");
+                        pomodoroTime = 25 * 60; // Reset
+                        updatePomodoroDisplay();
+                    }
+                }, 1000);
+            }
+            
+            // --- Customization ---
+            function applyTheme(color) {
+                const colors = {
+                    '#f97316': ['#f97316', '#fb923c', '#fdba74'], // Orange
+                    '#3b82f6': ['#3b82f6', '#60a5fa', '#93c5fd'], // Blue
+                    '#22c55e': ['#22c55e', '#4ade80', '#86efac'], // Green
+                    '#ec4899': ['#ec4899', '#f472b6', '#f9a8d4'], // Pink
+                    '#a855f7': ['#a855f7', '#c084fc', '#d8b4fe']  // Purple
+                };
+                rootEl.style.setProperty('--accent-500', colors[color][0]);
+                rootEl.style.setProperty('--accent-400', colors[color][1]);
+                rootEl.style.setProperty('--accent-300', colors[color][2]);
+                localStorage.setItem('kikisTrackerTheme', color);
+                
+                document.querySelectorAll('.color-swatch').forEach(el => {
+                    el.classList.toggle('active', el.dataset.color === color);
+                });
+            }
+
+
+            // --- Event Handlers & Initialization ---
+            function openModal(modalEl) {
+                modalEl.classList.remove('opacity-0', 'pointer-events-none');
+                modalEl.querySelector('.modal-content').classList.remove('scale-95');
+            }
+
+            function closeModal(modalEl) {
+                modalEl.classList.add('opacity-0');
+                modalEl.querySelector('.modal-content').classList.add('scale-95');
+                setTimeout(() => {
+                    modalEl.classList.add('pointer-events-none');
+                }, 300);
+            }
+
+             function handleFormSubmit(e) {
+                e.preventDefault();
+                const id = taskIdInput.value;
+                const taskData = {
+                    title: taskTitleInput.value.trim(),
+                    description: taskDescriptionInput.value.trim(),
+                    dueDate: taskDueDateInput.value,
+                    priority: taskPriorityInput.value,
+                    subject: taskSubjectInput.value.trim(),
+                    goalId: taskGoalSelect.value
+                };
+
+                if (!taskData.title) {
+                    showMessage("Title cannot be empty.", 'error');
+                    return;
+                }
+
+                if (id) {
+                    const taskIndex = allTasks.findIndex(t => t.id === id);
+                    if (taskIndex > -1) {
+                        allTasks[taskIndex] = { ...allTasks[taskIndex], ...taskData };
+                    }
+                } else {
+                    const newTask = { ...taskData, id: Date.now().toString(), status: 'pending', createdAt: new Date().toISOString() };
+                    allTasks.push(newTask);
+                }
+                saveAllData();
+                renderAll();
+                closeModal(taskModal);
+            }
+
+            function handleGoalFormSubmit(e) {
+                e.preventDefault();
+                const id = goalIdInput.value;
+                const title = goalTitleInput.value.trim();
+                if (!title) { showMessage("Goal title cannot be empty.", "error"); return; }
+
+                if (id) {
+                    const goal = allGoals.find(g => g.id === id);
+                    if (goal) goal.title = title;
+                } else {
+                    allGoals.push({ id: Date.now().toString(), title, status: 'pending', createdAt: new Date().toISOString() });
+                }
+                saveAllData();
+                renderAll();
+                closeModal(goalModal);
+            }
+             
+            // Bind initial listeners
+            const exitPage = document.getElementById('page-exit');
+            
+            const quotes = ["The secret of getting ahead is getting started.", "The best way to predict the future is to create it.", "Well done is better than well said."];
+            let quoteIndex = 0;
+            entryQuoteEl.textContent = quotes[quoteIndex];
+            setInterval(() => {
+                entryQuoteEl.style.opacity = '0';
+                setTimeout(() => {
+                    quoteIndex = (quoteIndex + 1) % quotes.length;
+                    entryQuoteEl.textContent = quotes[quoteIndex];
+                    entryQuoteEl.style.opacity = '1';
+                }, 500);
+            }, 5000);
+            
+            enterBtn.addEventListener('click', showMainApp);
+            backToEntryBtn.addEventListener('click', () => {
+                showExitPage();
+            });
+            
+            // Exit page event listeners
+            const returnToTrackerBtn = document.getElementById('return-to-tracker-btn');
+            const newSessionBtn = document.getElementById('new-session-btn');
+            
+            returnToTrackerBtn.addEventListener('click', () => {
+                hideExitPage();
+                showMainApp();
+            });
+            
+            newSessionBtn.addEventListener('click', () => {
+                hideExitPage();
+                showWelcomePage();
+            });
+            
+            function toggleSidebar(forceClose = false) {
+                if (forceClose) {
+                    sidebar.classList.add('-translate-x-full');
+                    sidebarOverlay.classList.add('hidden');
+                } else {
+                    sidebar.classList.toggle('-translate-x-full');
+                    sidebarOverlay.classList.toggle('hidden');
+                }
+            }
+
+            hamburgerBtn.addEventListener('click', () => toggleSidebar());
+            sidebarOverlay.addEventListener('click', () => toggleSidebar());
+            
+            navLinks.forEach(link => link.addEventListener('click', () => switchPage(link.id.replace('nav-', ''))));
+            
+            addTaskBtn.addEventListener('click', () => {
+                taskForm.reset();
+                taskIdInput.value = '';
+                modalTitle.textContent = 'Add New Task';
+                openModal(taskModal);
+            });
+            addGoalBtn.addEventListener('click', () => {
+                goalForm.reset();
+                goalIdInput.value = '';
+                goalModalTitle.textContent = 'Add New Goal';
+                openModal(goalModal);
+            });
+            
+            cancelBtn.addEventListener('click', () => closeModal(taskModal));
+            cancelGoalBtn.addEventListener('click', () => closeModal(goalModal));
+            
+            taskForm.addEventListener('submit', handleFormSubmit);
+            goalForm.addEventListener('submit', handleGoalFormSubmit);
+
+            taskList.addEventListener('click', (e) => {
+                const target = e.target.closest('button');
+                if (!target) return;
+                const taskCard = target.closest('.task-card');
+                const taskId = taskCard.dataset.id;
+                if(target.classList.contains('edit-btn')) {
+                    const task = allTasks.find(t => t.id === taskId);
+                    if(task) {
+                        modalTitle.textContent = 'Edit Task';
+                        taskIdInput.value = task.id;
+                        taskTitleInput.value = task.title;
+                        taskDescriptionInput.value = task.description || '';
+                        taskDueDateInput.value = task.dueDate || '';
+                        taskPriorityInput.value = task.priority || 'easy';
+                        taskSubjectInput.value = task.subject || '';
+                        taskGoalSelect.value = task.goalId || '';
+                        openModal(taskModal);
+                    }
+                }
+                if(target.classList.contains('start-pomodoro-btn')) {
+                    startPomodoro();
+                }
+                if(target.classList.contains('complete-btn')) toggleTaskStatus(taskId);
+                if(target.classList.contains('delete-btn')) deleteTask(taskId);
+            });
+            
+            goalList.addEventListener('click', e => {
+                handleGoalListClick(e);
+            });
+             completedGoalList.addEventListener('click', e => {
+                handleGoalListClick(e);
+            });
+
+            function handleGoalListClick(e) {
+                const target = e.target.closest('button');
+                if(!target) return;
+                const goalCard = target.closest('.goal-card');
+                const goalId = goalCard.dataset.id;
+                if(target.classList.contains('edit-goal-btn')) {
+                    const goal = allGoals.find(g => g.id === goalId);
+                    if (goal) {
+                        goalModalTitle.textContent = 'Edit Goal';
+                        goalIdInput.value = goal.id;
+                        goalTitleInput.value = goal.title;
+                        openModal(goalModal);
+                    }
+                }
+                if(target.classList.contains('delete-goal-btn')) {
+                    allTasks.forEach(t => { if(t.goalId === goalId) t.goalId = ''; });
+                    allGoals = allGoals.filter(g => g.id !== goalId);
+                    saveAllData();
+                    renderAll();
+                }
+                if(target.classList.contains('complete-goal-btn')) {
+                    const goal = allGoals.find(g => g.id === goalId);
+                    if(goal) {
+                        goal.status = 'completed';
+                        goal.completedAt = new Date().toISOString();
+                        saveAllData();
+                        renderAll();
+                        showMessage("Goal completed! Great job!", "success");
+                    }
+                }
+            }
+
+
+            settingsBtn.addEventListener('click', () => openModal(settingsModal));
+            closeSettingsBtn.addEventListener('click', () => closeModal(settingsModal));
+            colorPalette.addEventListener('click', (e) => {
+                if(e.target.classList.contains('color-swatch')) {
+                    applyTheme(e.target.dataset.color);
+                }
+            });
+
+            pomodoroTimeEl.addEventListener('blur', handlePomodoroTimeEdit);
+            pomodoroTimeEl.addEventListener('keydown', (e) => {
+                if(e.key === 'Enter') {
+                    e.preventDefault();
+                    pomodoroTimeEl.blur();
+                }
+            });
+            
+            const savedTheme = localStorage.getItem('kikisTrackerTheme') || '#f97316';
+            applyTheme(savedTheme);
+
+            loadAllData();
+            showWelcomePage(); // Start with welcome page
+            
+            function showMainApp() {
+                bodyEl.classList.remove('welcome-active', 'exit-active');
+                entryPage.classList.remove('active');
+                exitPage.classList.add('hidden');
+                entryPage.style.opacity = '0';
+                entryPage.style.pointerEvents = 'none';
+                mainApp.classList.remove('hidden');
+                renderAll(); // Render everything once app is shown
+            }
+            
+            function showWelcomePage() {
+                bodyEl.classList.add('welcome-active');
+                bodyEl.classList.remove('exit-active');
+                mainApp.classList.add('hidden');
+                exitPage.classList.add('hidden');
+                entryPage.classList.add('active');
+                setTimeout(() => {
+                    entryPage.style.opacity = '1';
+                    entryPage.style.pointerEvents = 'auto';
+                }, 50);
+            }
+            
+            function showExitPage() {
+                bodyEl.classList.add('exit-active');
+                bodyEl.classList.remove('welcome-active');
+                mainApp.classList.add('hidden');
+                entryPage.classList.remove('active');
+                exitPage.classList.remove('hidden');
+                
+                // Update exit page statistics
+                updateExitPageStats();
+                
+                setTimeout(() => {
+                    exitPage.style.opacity = '1';
+                    exitPage.style.pointerEvents = 'auto';
+                }, 50);
+            }
+            
+            function hideExitPage() {
+                exitPage.style.opacity = '0';
+                exitPage.style.pointerEvents = 'none';
+                setTimeout(() => {
+                    exitPage.classList.add('hidden');
+                }, 300);
+            }
+            
+            function updateExitPageStats() {
+                const completedTasks = allTasks.filter(t => t.status === 'completed').length;
+                const completedGoals = allGoals.filter(g => g.status === 'completed').length;
+                const totalTasks = allTasks.length;
+                const productivityScore = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+                
+                document.getElementById('exit-tasks-completed').textContent = completedTasks;
+                document.getElementById('exit-goals-achieved').textContent = completedGoals;
+                document.getElementById('exit-productivity-score').textContent = `${productivityScore}%`;
+            }
+             function showMessage(message, type = 'success') {
+                messageText.textContent = message;
+                messageBox.className = messageBox.className.replace(/bg-(red|green|blue)-500/, `bg-${type === 'error' ? 'red' : (type === 'info' ? 'blue' : 'green')}-500`);
+                messageBox.classList.remove('opacity-0', 'translate-y-[-20px]');
+                setTimeout(() => {
+                     messageBox.classList.add('opacity-0', 'translate-y-[-20px]');
+                }, 3000);
+            }
+            function updateThisWeekProgress() {
+                const today = new Date();
+                const dayOfWeek = today.getDay(); 
+                const startOfWeek = new Date(today);
+                startOfWeek.setDate(today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1)); // Monday as start
+                startOfWeek.setHours(0,0,0,0);
+
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6);
+                endOfWeek.setHours(23,59,59,999);
+
+                const tasksThisWeek = allTasks.filter(task => {
+                    if (!task.dueDate) return false;
+                    const dueDate = new Date(task.dueDate);
+                    return dueDate >= startOfWeek && dueDate <= endOfWeek;
+                });
+
+                const total = tasksThisWeek.length;
+                if (total === 0) {
+                    weeklyProgressPercentage.textContent = 'N/A';
+                    weeklyProgressBarFill.style.width = '0%';
+                    weeklyProgressSummary.textContent = "No tasks due this week.";
+                    return;
+                }
+                
+                const completed = tasksThisWeek.filter(t => t.status === 'completed').length;
+                const percentage = Math.round((completed / total) * 100);
+                
+                weeklyProgressPercentage.textContent = `${percentage}%`;
+                weeklyProgressBarFill.style.width = `${percentage}%`;
+                weeklyProgressSummary.textContent = `${completed} of ${total} tasks this week completed.`;
+            }
+            
+            function updateProgress() {
+                const totalTasks = allTasks.length;
+                const completedTasks = allTasks.filter(task => task.status === 'completed').length;
+                const pendingTasks = totalTasks - completedTasks;
+                const percentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+                progressBarFill.style.width = `${percentage}%`;
+                progressPercentage.textContent = `${percentage}%`;
+                if (totalTasks === 0) { progressSummary.textContent = "Add a task to get started!"; } 
+                else if (pendingTasks === 0) { progressSummary.textContent = `All tasks completed! Well done!`; } 
+                else { progressSummary.textContent = `You have ${pendingTasks} task${pendingTasks > 1 ? 's' : ''} remaining.`; }
+            }
+            function formatDuration(seconds) {
+                if (isNaN(seconds) || seconds < 0) return "--";
+                if (seconds < 60) return `${Math.round(seconds)}s`;
+                if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
+                if (seconds < 86400) return `${(seconds / 3600).toFixed(1)}h`;
+                return `${(seconds / 86400).toFixed(1)}d`;
+            }
+            function animateValue(obj, start, end, duration) {
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    obj.textContent = Math.floor(progress * (end - start) + start);
+                    if (progress < 1) window.requestAnimationFrame(step);
+                };
+                window.requestAnimationFrame(step);
+            }
+            function deleteTask(id) {
+                allTasks = allTasks.filter(t => t.id !== id);
+                saveAllData();
+                renderAll();
+                showMessage("Task deleted.");
+            }
+            function toggleTaskStatus(id) {
+                const task = allTasks.find(t => t.id === id);
+                if (task) {
+                    task.status = task.status === 'pending' ? 'completed' : 'pending';
+                    task.completedAt = task.status === 'completed' ? new Date().toISOString() : null;
+                    saveAllData();
+                    renderAll();
+                }
+            }
+             statusFilters.addEventListener('click', (e) => {
+                if(e.target.matches('.filter-btn')) {
+                    currentStatusFilter = e.target.dataset.filter;
+                    statusFilters.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    renderTasks();
+                }
+            });
+            priorityFilters.addEventListener('click', (e) => {
+                 if(e.target.matches('.priority-filter-btn')) {
+                    currentPriorityFilter = e.target.dataset.priority;
+                    priorityFilters.querySelectorAll('.priority-filter-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    renderTasks();
+                }
+            });
+            statusFilters.querySelector('[data-filter="all"]').classList.add('active');
+            priorityFilters.querySelector('[data-priority="all"]').classList.add('active');
+        });
+    </script>
+</body>
+</html>
+
+
+
