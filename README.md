@@ -1,4 +1,4 @@
-# 📊 Kiki's Tracker – Modern Productivity Dashboard
+# 📊 Kiki's Tracker 
 
 <div align="center">
   <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5">
