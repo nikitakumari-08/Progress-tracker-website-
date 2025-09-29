@@ -103,16 +103,6 @@
 * **Dashboard**: View overall progress summary
 * **Goals List**: See all your tracked goals
 * **Completed**: Review achieved goals
-
-### Keyboard Shortcuts
-
-| Shortcut       | Action       |
-| -------------- | ------------ |
-| `Ctrl/Cmd + N` | Add new goal |
-| `Ctrl/Cmd + K` | Quick search |
-| `Enter`        | Save         |
-| `Escape`       | Cancel/close |
-
 ---
 
 ## 🛠️ Technical Details
@@ -164,28 +154,6 @@ Change CSS variables in `styles.css` to customize:
 Edit category options in `index.html` dropdown.
 
 ---
-
-## 📱 Browser Support
-
-| Browser | Version | Support |
-| ------- | ------- | ------- |
-| Chrome  | 60+     | ✅ Full  |
-| Firefox | 55+     | ✅ Full  |
-| Safari  | 12+     | ✅ Full  |
-| Edge    | 79+     | ✅ Full  |
-
----
-
-## 🤝 Contributing
-
-We welcome contributions!
-
-1. **Fork this repo**
-2. **Create a branch**: `git checkout -b feature/amazing-feature`
-3. **Commit changes**: `git commit -m "Add amazing feature"`
-4. **Push branch**: `git push origin feature/amazing-feature`
-5. **Open PR** 🎉
-
 ### Guidelines
 
 * Follow coding style
@@ -203,12 +171,6 @@ We welcome contributions!
 * **Vanilla JS** for app logic
 
 ---
-
-## 📞 Support
-
-* 🐛 **Report Issues**: [Open an issue](https://github.com/nikitakumari-08/Progress-tracker-website-/issues)
-* 💡 **Suggest Features**: [Start a discussion](https://github.com/nikitakumari-08/Progress-tracker-website-/discussions)
-* 📧 **Contact**: [Your Email Here]
 
 ---
 
