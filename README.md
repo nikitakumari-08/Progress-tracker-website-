@@ -1,4 +1,4 @@
-# 📊 Progress Tracker – Modern Productivity Dashboard
+# 📊 Kiki's Tracker – Modern Productivity Dashboard
 
 <div align="center">
   <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5">
@@ -163,6 +163,6 @@ Edit category options in `index.html` dropdown.
 ---
 
 <div align="center">
-  <p><strong>Progress Tracker</strong> – Your personal growth companion</p>
+  <p><strong>Kiki's Tracker</strong> – Your personal growth companion</p>
   <p>Made with ❤️</p>
 </div>
