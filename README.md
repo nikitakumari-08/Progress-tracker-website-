@@ -40,16 +40,6 @@
 * **💾 Local Storage**: Save progress locally without external database
 * **📤 Data Export/Import**: Backup and restore your goals easily
 * **🎭 Interactive Empty States**: Friendly UI guidance for new users
-
----
-
-## 🖼️ Screenshots
-
-<div align="center">
-  <img src="screenshot.png" alt="Progress Tracker Interface" width="55%">
-  <p><em>Track, visualize, and achieve your goals with a modern dashboard</em></p>
-</div>
-
 ---
 
 ## 🚀 Quick Start
@@ -169,8 +159,6 @@ Edit category options in `index.html` dropdown.
 * **Google Fonts** for typography
 * **CSS3** for smooth UI/UX
 * **Vanilla JS** for app logic
-
----
 
 ---
 
